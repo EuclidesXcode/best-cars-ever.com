@@ -77,6 +77,10 @@ export function WheelTimeline({
     >
       <Backdrop index={index} />
 
+      {/* CARROS VIZINHOS — fantasmas nas laterais, sumindo como a linha */}
+      <GhostCar car={prev} side="left" onClick={() => go(-1)} />
+      <GhostCar car={next} side="right" onClick={() => go(1)} />
+
       {/* CARRO + INFO — reserva espaço embaixo para não colidir com a trilha */}
       <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 pb-44 md:pb-32">
         <AnimatePresence mode="wait" custom={dir}>
@@ -239,6 +243,50 @@ function Backdrop({ index }: { index: number }) {
       {/* halo de luz central sob o carro */}
       <div className="stage-glow pointer-events-none absolute inset-x-0 top-[18%] h-[60vh]" />
     </div>
+  )
+}
+
+/** Carro vizinho fantasma: encostado na borda, transparente e sumindo como a linha. */
+function GhostCar({
+  car,
+  side,
+  onClick,
+}: {
+  car: CarWithStats
+  side: 'left' | 'right'
+  onClick: () => void
+}) {
+  const isLeft = side === 'left'
+  return (
+    <button
+      onClick={onClick}
+      aria-hidden
+      tabIndex={-1}
+      className={`pointer-events-auto absolute top-1/2 z-0 hidden h-56 w-[34rem] -translate-y-1/2 md:block lg:h-64 lg:w-[40rem] ${
+        isLeft ? '-left-[20%]' : '-right-[20%]'
+      }`}
+    >
+      <motion.div
+        key={car.id}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.18 }}
+        transition={{ duration: 0.6 }}
+        className="relative h-full w-full"
+        style={{
+          // dissolve em direção à borda da tela, como a linha do tempo
+          WebkitMaskImage: `linear-gradient(to ${isLeft ? 'left' : 'right'}, black 10%, transparent 85%)`,
+          maskImage: `linear-gradient(to ${isLeft ? 'left' : 'right'}, black 10%, transparent 85%)`,
+        }}
+      >
+        <Image
+          src={car.image_url}
+          alt=""
+          fill
+          sizes="40rem"
+          className="object-contain blur-[1px] grayscale"
+        />
+      </motion.div>
+    </button>
   )
 }
 
