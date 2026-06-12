@@ -263,19 +263,19 @@ function GhostCar({
       aria-hidden
       tabIndex={-1}
       className={`pointer-events-auto absolute top-1/2 z-0 hidden h-56 w-[34rem] -translate-y-1/2 md:block lg:h-64 lg:w-[40rem] ${
-        isLeft ? '-left-[20%]' : '-right-[20%]'
+        isLeft ? '-left-[6%]' : '-right-[6%]'
       }`}
     >
       <motion.div
         key={car.id}
         initial={{ opacity: 0 }}
-        animate={{ opacity: 0.18 }}
+        animate={{ opacity: 0.28 }}
         transition={{ duration: 0.6 }}
         className="relative h-full w-full"
         style={{
           // dissolve em direção à borda da tela, como a linha do tempo
-          WebkitMaskImage: `linear-gradient(to ${isLeft ? 'left' : 'right'}, black 10%, transparent 85%)`,
-          maskImage: `linear-gradient(to ${isLeft ? 'left' : 'right'}, black 10%, transparent 85%)`,
+          WebkitMaskImage: `linear-gradient(to ${isLeft ? 'left' : 'right'}, black 35%, transparent 95%)`,
+          maskImage: `linear-gradient(to ${isLeft ? 'left' : 'right'}, black 35%, transparent 95%)`,
         }}
       >
         <Image
