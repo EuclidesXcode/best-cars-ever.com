@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-ink text-white antialiased;
+  overflow-x: hidden;
+}
+
+/* Thin custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a0f;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2a35;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a45;
+}
+
+.text-gradient {
+  @apply bg-gradient-to-r from-accent via-gold to-accent bg-clip-text text-transparent;
+  background-size: 200% auto;
+}
+
+/* A imagem do carro dissolve na base — sem moldura, parece flutuar. */
+.mask-fade-bottom {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 55%,
+    rgba(0, 0, 0, 0.55) 78%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 55%,
+    rgba(0, 0, 0, 0.55) 78%,
+    transparent 100%
+  );
+}
+
+/* Halo de luz atrás do carro flutuante. */
+.stage-glow {
+  background: radial-gradient(
+    60% 50% at 50% 45%,
+    rgba(245, 179, 1, 0.18) 0%,
+    rgba(225, 6, 0, 0.1) 35%,
+    transparent 70%
+  );
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

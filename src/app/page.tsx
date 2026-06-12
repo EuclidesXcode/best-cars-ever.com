@@ -1,15 +1,9 @@
-import Header from '@/components/Header'
-import Hero from '@/components/Hero'
-import FeaturedCars from '@/components/FeaturedCars'
-import Footer from '@/components/Footer'
+import { App } from '@/components/App'
+import { getCars, getCarsByDecade } from '@/lib/queries'
 
-export default function Home() {
-  return (
-    <div className="min-h-screen bg-slate-900">
-      <Header />
-      <Hero />
-      <FeaturedCars />
-      <Footer />
-    </div>
-  )
+export const dynamic = 'force-dynamic'
+
+export default async function Home() {
+  const [cars, carsByDecade] = await Promise.all([getCars(), getCarsByDecade()])
+  return <App cars={cars} carsByDecade={carsByDecade} />
 }
