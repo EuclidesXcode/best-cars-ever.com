@@ -121,9 +121,21 @@ export function CarDetail({
               <h2 className="mt-1 text-5xl font-black leading-[0.95] sm:text-6xl">
                 {car.name}
               </h2>
-              <p className="mt-4 max-w-md text-base leading-relaxed text-white/70">
-                {car.blurb[locale]}
-              </p>
+              {(() => {
+                const history =
+                  car.blurb?.[locale] || car.blurb?.pt || car.blurb?.en || ''
+                if (!history) return null
+                return (
+                  <div className="mt-4 max-w-md">
+                    <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-white/40">
+                      {t('car.history')}
+                    </h3>
+                    <p className="text-base leading-relaxed text-white/70">
+                      {history}
+                    </p>
+                  </div>
+                )
+              })()}
 
               <div className="mt-5 flex flex-wrap gap-5 text-sm">
                 {car.top_speed && (

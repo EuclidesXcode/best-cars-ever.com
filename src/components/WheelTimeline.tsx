@@ -77,8 +77,8 @@ export function WheelTimeline({
     >
       <Backdrop index={index} />
 
-      {/* CARRO + INFO */}
-      <div className="relative z-10 flex h-full flex-col items-center justify-center px-6">
+      {/* CARRO + INFO — reserva espaço embaixo para não colidir com a trilha */}
+      <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 pb-44 md:pb-32">
         <AnimatePresence mode="wait" custom={dir}>
           <motion.div
             key={car.id}
@@ -95,42 +95,42 @@ export function WheelTimeline({
             className="flex flex-col items-center"
           >
             {/* decade label */}
-            <span className="mb-3 text-xs font-medium uppercase tracking-[0.35em] text-gold">
+            <span className="mb-1 text-xs font-medium uppercase tracking-[0.35em] text-gold">
               {car.manufacturer} · {car.decade}s
             </span>
 
             {/* carro flutuando + reflexo */}
             <button
               onClick={() => onSelect(car)}
-              className="group relative"
+              className="group relative -mb-4"
               aria-label={`${car.manufacturer} ${car.name}`}
             >
               {/* sombra elíptica no chão (como se o carro estivesse pousado) */}
               <div
-                className="pointer-events-none absolute -bottom-4 left-1/2 h-10 w-[70%] -translate-x-1/2 rounded-[50%] bg-black/60 blur-2xl"
+                className="pointer-events-none absolute bottom-2 left-1/2 h-8 w-[65%] -translate-x-1/2 rounded-[50%] bg-black/60 blur-2xl"
                 aria-hidden
               />
-              <div className="relative h-52 w-[22rem] sm:h-72 sm:w-[44rem] lg:h-80 lg:w-[52rem]">
+              <div className="relative h-44 w-[20rem] sm:h-60 sm:w-[40rem] lg:h-64 lg:w-[46rem]">
                 <Image
                   src={car.image_url}
                   alt={`${car.manufacturer} ${car.name}`}
                   fill
                   priority
-                  sizes="(max-width:640px) 22rem, (max-width:1024px) 44rem, 52rem"
+                  sizes="(max-width:640px) 20rem, (max-width:1024px) 40rem, 46rem"
                   className="object-contain drop-shadow-[0_24px_30px_rgba(0,0,0,0.55)] transition-transform duration-500 group-hover:scale-[1.03]"
                 />
               </div>
               {/* reflexo espelhado no chão */}
               <div
-                className="pointer-events-none absolute left-0 top-[calc(100%-1rem)] h-40 w-full -scale-y-100 opacity-20 [mask-image:linear-gradient(to_bottom,black,transparent_70%)]"
+                className="pointer-events-none absolute left-0 top-[calc(100%-1.5rem)] h-28 w-full -scale-y-100 opacity-15 [mask-image:linear-gradient(to_bottom,black,transparent_65%)]"
                 aria-hidden
               >
-                <div className="relative h-52 w-[22rem] sm:h-72 sm:w-[44rem] lg:h-80 lg:w-[52rem]">
+                <div className="relative h-44 w-[20rem] sm:h-60 sm:w-[40rem] lg:h-64 lg:w-[46rem]">
                   <Image
                     src={car.image_url}
                     alt=""
                     fill
-                    sizes="52rem"
+                    sizes="46rem"
                     className="object-contain blur-[3px]"
                   />
                 </div>
@@ -138,14 +138,14 @@ export function WheelTimeline({
             </button>
 
             {/* nome + meta */}
-            <h2 className="mt-4 text-center text-4xl font-black leading-none drop-shadow-lg sm:text-7xl">
+            <h2 className="text-center text-4xl font-black leading-none drop-shadow-lg sm:text-6xl lg:text-7xl">
               {car.name}
             </h2>
-            <div className="mt-3 flex items-center gap-3 text-white/70">
-              <span className="text-lg tabular-nums">{car.year}</span>
+            <div className="mt-2 flex items-center gap-3 text-white/70">
+              <span className="text-base tabular-nums">{car.year}</span>
               {car.review_count > 0 && (
                 <span className="flex items-center gap-1 text-gold">
-                  <Star size={16} className="fill-gold text-gold" />
+                  <Star size={15} className="fill-gold text-gold" />
                   {car.avg_rating.toFixed(1)}
                 </span>
               )}
@@ -153,7 +153,7 @@ export function WheelTimeline({
 
             <button
               onClick={() => onSelect(car)}
-              className="mt-6 rounded-full bg-gradient-to-r from-accent to-gold px-7 py-3 text-sm font-semibold text-black shadow-[0_8px_30px_-6px_rgba(245,179,1,0.5)] transition-transform active:scale-95 sm:hover:scale-105"
+              className="mt-4 rounded-full bg-gradient-to-r from-accent to-gold px-7 py-2.5 text-sm font-semibold text-black shadow-[0_8px_30px_-6px_rgba(245,179,1,0.5)] transition-transform active:scale-95 sm:hover:scale-105"
             >
               {t('car.rate')}
             </button>
@@ -166,7 +166,7 @@ export function WheelTimeline({
       <NavArrow side="right" label={next.name} onClick={() => go(1)} />
 
       {/* TRILHA DE PROGRESSO embaixo */}
-      <div className="absolute bottom-24 left-1/2 z-20 flex max-w-[90vw] -translate-x-1/2 items-center gap-1.5 md:bottom-10">
+      <div className="absolute bottom-20 left-1/2 z-20 flex max-w-[90vw] -translate-x-1/2 items-center gap-1.5 md:bottom-8">
         {cars.map((c, i) => {
           const decadeStart = i === 0 || cars[i - 1].decade !== c.decade
           return (
