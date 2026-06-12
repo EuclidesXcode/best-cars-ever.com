@@ -67,6 +67,34 @@ body {
   transform-style: preserve-3d;
 }
 
+/* Piso 3D: grade de fibra de carbono que some no horizonte. */
+.carbon-floor {
+  background-color: #07070b;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.015) 0 2px,
+      transparent 2px 4px
+    );
+  background-size:
+    60px 60px,
+    60px 60px,
+    8px 8px;
+}
+
+/* Névoa que esconde a linha do horizonte do piso. */
+.horizon-fade {
+  background: linear-gradient(
+    to bottom,
+    #0a0a0f 0%,
+    rgba(10, 10, 15, 0.85) 18%,
+    rgba(10, 10, 15, 0.4) 38%,
+    transparent 60%
+  );
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

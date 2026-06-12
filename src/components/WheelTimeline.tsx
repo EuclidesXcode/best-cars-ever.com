@@ -2,21 +2,15 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Image from 'next/image'
-import {
-  motion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-  useMotionValueEvent,
-} from 'framer-motion'
-import { ChevronUp, ChevronDown } from 'lucide-react'
+import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion'
+import { ChevronLeft, ChevronRight, Star } from 'lucide-react'
 import type { CarWithStats } from '@/lib/types'
 import { useI18n } from './I18nProvider'
 
 /**
- * Linha do tempo circular — um aro gigante do qual só se vê o arco superior.
- * Rolar/arrastar gira o aro; o carro que chega ao foco (topo, 12h) cresce.
- * Clicar nesse ponto abre o detalhe.
+ * Home cinematográfica: fundo escuro premium, uma linha/curva sutil cruzando a
+ * tela e o carro recortado flutuando grande no centro, com reflexo no chão.
+ * Navega lateralmente entre os carros (←/→, setas, arrasto, scroll, teclado).
  */
 export function WheelTimeline({
   cars,
@@ -26,244 +20,252 @@ export function WheelTimeline({
   onSelect: (car: CarWithStats) => void
 }) {
   const { t, locale } = useI18n()
-  const containerRef = useRef<HTMLDivElement>(null)
+  const n = cars.length
+  const [index, setIndex] = useState(0)
+  const [dir, setDir] = useState(1) // direção da transição (1 = avança, -1 = volta)
+  const car = cars[index]
 
-  // Janela angular ocupada pela timeline inteira (graus).
-  const SPAN = 150
-  const step = cars.length > 1 ? SPAN / (cars.length - 1) : 0
-  // Ângulo base de cada carro (centralizado em 0 = topo).
-  const angleOf = (i: number) => -SPAN / 2 + i * step
-
-  // rotation: quanto o aro girou. 0 → primeiro carro no foco.
-  const rotation = useMotionValue(SPAN / 2)
-  const smooth = useSpring(rotation, { stiffness: 90, damping: 20, mass: 0.6 })
-
-  const [focusIndex, setFocusIndex] = useState(0)
-
-  // Índice em foco = o carro cujo (ângulo + rotação) está mais perto de 0.
-  const computeFocus = useCallback(
-    (rot: number) => {
-      let best = 0
-      let bestDist = Infinity
-      for (let i = 0; i < cars.length; i++) {
-        const d = Math.abs(angleOf(i) + rot)
-        if (d < bestDist) {
-          bestDist = d
-          best = i
-        }
-      }
-      return best
+  const go = useCallback(
+    (d: 1 | -1) => {
+      setDir(d)
+      setIndex((i) => (i + d + n) % n)
     },
-    [cars.length] // eslint-disable-line react-hooks/exhaustive-deps
+    [n]
   )
 
-  useMotionValueEvent(smooth, 'change', (v) => {
-    setFocusIndex(computeFocus(v))
-  })
-
-  const clamp = (r: number) => Math.max(-SPAN / 2, Math.min(SPAN / 2, r))
-
-  // ---- Navegação por scroll ----
+  // teclado
   useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    function onWheel(e: WheelEvent) {
-      const delta = (e.deltaY || e.deltaX) * 0.12
-      const next = rotation.get() - delta
-      const atTop = next >= SPAN / 2 // primeiro carro
-      const atEnd = next <= -SPAN / 2 // último carro
-      // Nos limites, libera o scroll natural da página (para descer ao ranking).
-      if ((atEnd && e.deltaY > 0) || (atTop && e.deltaY < 0)) return
-      e.preventDefault()
-      rotation.set(clamp(next))
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') go(1)
+      if (e.key === 'ArrowLeft') go(-1)
     }
-    el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
-  }, [rotation]) // eslint-disable-line react-hooks/exhaustive-deps
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [go])
 
-  // ---- Navegação por arrasto (mobile + desktop) ----
-  const drag = useRef<{ y: number; rot: number } | null>(null)
+  // scroll horizontal/vertical avança
+  const wheelLock = useRef(false)
+  function onWheel(e: React.WheelEvent) {
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
+    if (wheelLock.current || Math.abs(delta) < 12) return
+    wheelLock.current = true
+    go(delta > 0 ? 1 : -1)
+    setTimeout(() => (wheelLock.current = false), 450)
+  }
+
+  // arrasto / swipe
+  const drag = useRef<{ x: number } | null>(null)
   function onPointerDown(e: React.PointerEvent) {
-    drag.current = { y: e.clientY, rot: rotation.get() }
-    ;(e.target as HTMLElement).setPointerCapture?.(e.pointerId)
+    drag.current = { x: e.clientX }
   }
-  function onPointerMove(e: React.PointerEvent) {
+  function onPointerUp(e: React.PointerEvent) {
     if (!drag.current) return
-    const dy = e.clientY - drag.current.y
-    rotation.set(clamp(drag.current.rot + dy * 0.25))
-  }
-  function onPointerUp() {
+    const dx = e.clientX - drag.current.x
+    if (Math.abs(dx) > 60) go(dx < 0 ? 1 : -1)
     drag.current = null
-    // encaixa no carro em foco
-    snapTo(computeFocus(rotation.get()))
   }
 
-  const snapTo = useCallback(
-    (i: number) => rotation.set(clamp(-angleOf(i))),
-    [rotation] // eslint-disable-line react-hooks/exhaustive-deps
-  )
-
-  function step1(dir: 1 | -1) {
-    const next = Math.max(0, Math.min(cars.length - 1, focusIndex + dir))
-    snapTo(next)
-  }
-
-  // ---- Geometria do aro ----
-  // Raio em px; o aro é posicionado abaixo da viewport, então só o topo aparece.
-  const radius = 1700
-  const RAD = Math.PI / 180
-
-  const focusCar = cars[focusIndex]
+  const prev = cars[(index - 1 + n) % n]
+  const next = cars[(index + 1) % n]
 
   return (
     <div
-      ref={containerRef}
+      onWheel={onWheel}
       onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
-      className="relative h-[100svh] touch-none select-none overflow-hidden"
+      className="relative h-[100svh] touch-pan-y select-none overflow-hidden"
     >
-      {/* Brilho sutil de fundo */}
-      <div className="stage-glow pointer-events-none absolute inset-x-0 top-0 h-[60vh]" />
+      <Backdrop index={index} />
 
-      {/* O ARO: gira em torno de um centro bem abaixo da tela. */}
-      <motion.div
-        style={{
-          rotate: useTransform(smooth, (r) => -r),
-          width: radius * 2,
-          height: radius * 2,
-          left: '50%',
-          x: '-50%',
-          top: `calc(14vh + ${radius}px)`,
-          marginTop: `-${radius}px`,
-        }}
-        className="absolute"
-      >
-        {/* linha fina do círculo */}
-        <svg
-          viewBox={`0 0 ${radius * 2} ${radius * 2}`}
-          className="absolute inset-0 h-full w-full"
-        >
-          <circle
-            cx={radius}
-            cy={radius}
-            r={radius - 2}
-            fill="none"
-            stroke="rgba(255,255,255,0.14)"
-            strokeWidth={1.5}
-          />
-        </svg>
+      {/* CARRO + INFO */}
+      <div className="relative z-10 flex h-full flex-col items-center justify-center px-6">
+        <AnimatePresence mode="wait" custom={dir}>
+          <motion.div
+            key={car.id}
+            custom={dir}
+            variants={{
+              enter: (d: number) => ({ opacity: 0, x: d * 120, scale: 0.92 }),
+              center: { opacity: 1, x: 0, scale: 1 },
+              exit: (d: number) => ({ opacity: 0, x: d * -120, scale: 0.92 }),
+            }}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            className="flex flex-col items-center"
+          >
+            {/* decade label */}
+            <span className="mb-3 text-xs font-medium uppercase tracking-[0.35em] text-gold">
+              {car.manufacturer} · {car.decade}s
+            </span>
 
-        {/* pontos / carros ao longo do aro */}
-        {cars.map((car, i) => {
-          // posição na borda do círculo: topo = -90° no sistema do SVG
-          const a = (angleOf(i) - 90) * RAD
-          const cx = radius + radius * Math.cos(a)
-          const cy = radius + radius * Math.sin(a)
-          const isFocus = i === focusIndex
-          const newDecade = i === 0 || cars[i - 1].decade !== car.decade
-
-          return (
-            <div
-              key={car.id}
-              className="absolute"
-              style={{
-                left: cx,
-                top: cy,
-                // contraposição da rotação do aro para o conteúdo ficar "de pé"
-                transform: `translate(-50%, -50%) rotate(${angleOf(i)}deg)`,
-              }}
+            {/* carro flutuando + reflexo */}
+            <button
+              onClick={() => onSelect(car)}
+              className="group relative"
+              aria-label={`${car.manufacturer} ${car.name}`}
             >
-              <button
-                onClick={() => (isFocus ? onSelect(car) : snapTo(i))}
-                className="group flex flex-col items-center"
-                aria-label={`${car.manufacturer} ${car.name}`}
-              >
-                {/* marcação de década */}
-                {newDecade && (
-                  <span className="absolute -top-10 whitespace-nowrap text-xs font-black uppercase tracking-[0.3em] text-gold/70">
-                    {car.decade}s
-                  </span>
-                )}
-
-                <motion.span
-                  animate={{ scale: isFocus ? 1.6 : 1, opacity: isFocus ? 1 : 0.5 }}
-                  transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-                  className={`block h-3 w-3 rounded-full ${
-                    isFocus
-                      ? 'bg-gold shadow-[0_0_20px_4px_rgba(245,179,1,0.6)]'
-                      : 'bg-white/40 group-hover:bg-white/70'
-                  }`}
+              {/* sombra elíptica no chão (como se o carro estivesse pousado) */}
+              <div
+                className="pointer-events-none absolute -bottom-4 left-1/2 h-10 w-[70%] -translate-x-1/2 rounded-[50%] bg-black/60 blur-2xl"
+                aria-hidden
+              />
+              <div className="relative h-52 w-[22rem] sm:h-72 sm:w-[44rem] lg:h-80 lg:w-[52rem]">
+                <Image
+                  src={car.image_url}
+                  alt={`${car.manufacturer} ${car.name}`}
+                  fill
+                  priority
+                  sizes="(max-width:640px) 22rem, (max-width:1024px) 44rem, 52rem"
+                  className="object-contain drop-shadow-[0_24px_30px_rgba(0,0,0,0.55)] transition-transform duration-500 group-hover:scale-[1.03]"
                 />
-                <span className="mt-2 text-[10px] font-medium tracking-wide text-white/50">
-                  {car.year}
+              </div>
+              {/* reflexo espelhado no chão */}
+              <div
+                className="pointer-events-none absolute left-0 top-[calc(100%-1rem)] h-40 w-full -scale-y-100 opacity-20 [mask-image:linear-gradient(to_bottom,black,transparent_70%)]"
+                aria-hidden
+              >
+                <div className="relative h-52 w-[22rem] sm:h-72 sm:w-[44rem] lg:h-80 lg:w-[52rem]">
+                  <Image
+                    src={car.image_url}
+                    alt=""
+                    fill
+                    sizes="52rem"
+                    className="object-contain blur-[3px]"
+                  />
+                </div>
+              </div>
+            </button>
+
+            {/* nome + meta */}
+            <h2 className="mt-4 text-center text-4xl font-black leading-none drop-shadow-lg sm:text-7xl">
+              {car.name}
+            </h2>
+            <div className="mt-3 flex items-center gap-3 text-white/70">
+              <span className="text-lg tabular-nums">{car.year}</span>
+              {car.review_count > 0 && (
+                <span className="flex items-center gap-1 text-gold">
+                  <Star size={16} className="fill-gold text-gold" />
+                  {car.avg_rating.toFixed(1)}
                 </span>
-              </button>
+              )}
             </div>
+
+            <button
+              onClick={() => onSelect(car)}
+              className="mt-6 rounded-full bg-gradient-to-r from-accent to-gold px-7 py-3 text-sm font-semibold text-black shadow-[0_8px_30px_-6px_rgba(245,179,1,0.5)] transition-transform active:scale-95 sm:hover:scale-105"
+            >
+              {t('car.rate')}
+            </button>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* SETAS LATERAIS */}
+      <NavArrow side="left" label={prev.name} onClick={() => go(-1)} />
+      <NavArrow side="right" label={next.name} onClick={() => go(1)} />
+
+      {/* TRILHA DE PROGRESSO embaixo */}
+      <div className="absolute bottom-24 left-1/2 z-20 flex max-w-[90vw] -translate-x-1/2 items-center gap-1.5 md:bottom-10">
+        {cars.map((c, i) => {
+          const decadeStart = i === 0 || cars[i - 1].decade !== c.decade
+          return (
+            <button
+              key={c.id}
+              onClick={() => {
+                setDir(i > index ? 1 : -1)
+                setIndex(i)
+              }}
+              aria-label={c.name}
+              className="group relative flex flex-col items-center"
+            >
+              {decadeStart && (
+                <span className="absolute -top-5 text-[9px] font-bold tracking-widest text-gold/60">
+                  {c.decade}s
+                </span>
+              )}
+              <span
+                className={`h-1.5 rounded-full transition-all ${
+                  i === index
+                    ? 'w-7 bg-gold'
+                    : 'w-1.5 bg-white/25 group-hover:bg-white/50'
+                }`}
+              />
+            </button>
           )
         })}
-      </motion.div>
-
-      {/* CARTÃO DO CARRO EM FOCO — flutua no centro/topo */}
-      <div className="pointer-events-none absolute inset-x-0 top-[14vh] flex flex-col items-center px-6 text-center">
-        {focusCar && (
-          <motion.button
-            key={focusCar.id}
-            initial={{ opacity: 0, y: 24, scale: 0.92 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            onClick={() => onSelect(focusCar)}
-            className="pointer-events-auto flex flex-col items-center"
-          >
-            <div className="relative h-44 w-72 sm:h-60 sm:w-[28rem]">
-              <Image
-                src={focusCar.image_url}
-                alt={`${focusCar.manufacturer} ${focusCar.name}`}
-                fill
-                priority
-                sizes="(max-width:640px) 18rem, 28rem"
-                className="mask-fade-bottom object-contain drop-shadow-[0_30px_50px_rgba(0,0,0,0.6)]"
-              />
-            </div>
-            <span className="mt-2 text-xs font-medium uppercase tracking-[0.25em] text-gold">
-              {focusCar.manufacturer} · {focusCar.year}
-            </span>
-            <h2 className="text-4xl font-black leading-tight sm:text-6xl">
-              {focusCar.name}
-            </h2>
-            <p className="mt-2 max-w-md text-sm text-white/60">
-              {focusCar.blurb[locale]}
-            </p>
-            <span className="mt-4 rounded-full bg-gradient-to-r from-accent to-gold px-6 py-2.5 text-sm font-semibold text-black">
-              {t('car.rate')}
-            </span>
-          </motion.button>
-        )}
-      </div>
-
-      {/* setas de navegação */}
-      <div className="absolute bottom-24 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 text-white/40 md:bottom-10">
-        <button
-          onClick={() => step1(-1)}
-          disabled={focusIndex === 0}
-          aria-label="anterior"
-          className="rounded-full p-2 transition-colors hover:text-white disabled:opacity-20"
-        >
-          <ChevronUp size={22} />
-        </button>
-        <span className="text-[10px] tabular-nums">
-          {focusIndex + 1} / {cars.length}
-        </span>
-        <button
-          onClick={() => step1(1)}
-          disabled={focusIndex === cars.length - 1}
-          aria-label="próximo"
-          className="rounded-full p-2 transition-colors hover:text-white disabled:opacity-20"
-        >
-          <ChevronDown size={22} />
-        </button>
       </div>
     </div>
+  )
+}
+
+/** Fundo escuro premium: chão em perspectiva + linha/curva sutil + brilho. */
+function Backdrop({ index }: { index: number }) {
+  return (
+    <div className="absolute inset-0">
+      {/* chão em perspectiva */}
+      <div className="absolute inset-0 [perspective:1000px] [perspective-origin:50%_35%]">
+        <div
+          className="carbon-floor absolute left-1/2 top-[58%] h-[120vh] w-[260vw] -translate-x-1/2 origin-top opacity-60"
+          style={{ transform: 'rotateX(76deg)' }}
+        />
+      </div>
+      {/* névoa do horizonte para esconder a borda do chão */}
+      <div className="horizon-fade pointer-events-none absolute inset-x-0 top-0 h-[68vh]" />
+
+      {/* linha/curva sutil cruzando a tela (a "timeline") */}
+      <svg
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        viewBox="0 0 1440 800"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        <defs>
+          <linearGradient id="tl" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="rgba(225,6,0,0)" />
+            <stop offset="50%" stopColor="rgba(225,6,0,0.6)" />
+            <stop offset="100%" stopColor="rgba(225,6,0,0)" />
+          </linearGradient>
+        </defs>
+        <motion.path
+          d="M -50 560 Q 720 380 1490 560"
+          fill="none"
+          stroke="url(#tl)"
+          strokeWidth="2"
+          initial={false}
+          animate={{ d: 'M -50 560 Q 720 380 1490 560' }}
+        />
+      </svg>
+
+      {/* halo de luz central sob o carro */}
+      <div className="stage-glow pointer-events-none absolute inset-x-0 top-[18%] h-[60vh]" />
+    </div>
+  )
+}
+
+function NavArrow({
+  side,
+  label,
+  onClick,
+}: {
+  side: 'left' | 'right'
+  label: string
+  onClick: () => void
+}) {
+  const Icon = side === 'left' ? ChevronLeft : ChevronRight
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      className={`group absolute top-1/2 z-20 hidden -translate-y-1/2 items-center gap-2 text-white/40 transition-colors hover:text-white md:flex ${
+        side === 'left' ? 'left-6 flex-row' : 'right-6 flex-row-reverse'
+      }`}
+    >
+      <span className="rounded-full border border-white/15 bg-white/5 p-3 backdrop-blur transition-colors group-hover:bg-white/10">
+        <Icon size={22} />
+      </span>
+      <span className="max-w-[7rem] truncate text-xs uppercase tracking-wide opacity-0 transition-opacity group-hover:opacity-100">
+        {label}
+      </span>
+    </button>
   )
 }
