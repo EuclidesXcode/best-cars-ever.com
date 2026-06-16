@@ -14,11 +14,9 @@ import { useCountUp, APPLE_EASE } from '@/lib/useCountUp'
 export function IntroHero({
   carCount,
   decadeCount,
-  reviewCount,
 }: {
   carCount: number
   decadeCount: number
-  reviewCount: number
 }) {
   const { t } = useI18n()
   const ref = useRef<HTMLElement>(null)
@@ -63,7 +61,7 @@ export function IntroHero({
       {/* título — reveal palavra-a-palavra */}
       <motion.h1
         style={{ y: yTitle, opacity }}
-        className="relative z-10 mt-3 flex max-w-5xl flex-wrap justify-center gap-x-[0.25em] font-display font-medium leading-[0.92] tracking-tight"
+        className="relative z-10 mt-7 flex max-w-5xl flex-wrap justify-center gap-x-[0.25em] font-display font-medium leading-[0.92] tracking-tight"
       >
         {titleWords.map((w, i) => (
           <span key={i} className="inline-block overflow-hidden pb-[0.1em]">
@@ -86,7 +84,7 @@ export function IntroHero({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, delay: 0.5, ease: APPLE_EASE }}
-        className="relative z-10 mt-5 max-w-md text-pretty text-sm font-light leading-relaxed text-platinum/55 sm:text-base"
+        className="relative z-10 mt-7 max-w-md text-pretty text-sm font-light leading-relaxed text-platinum/55 sm:text-base"
       >
         {t('hero.subtitle')}
       </motion.p>
@@ -97,27 +95,23 @@ export function IntroHero({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, delay: 0.8, ease: APPLE_EASE }}
-        className="relative z-10 mt-5 flex items-center gap-8 sm:gap-12"
+        className="relative z-10 mt-8 flex items-center gap-8 sm:gap-12"
       >
         <Stat value={carCount} label={t('hero.statCars')} />
         <span className="h-8 w-px bg-white/10" aria-hidden />
         <Stat value={decadeCount} label={t('hero.statDecades')} />
         <span className="hidden h-8 w-px bg-white/10 sm:block" aria-hidden />
-        <Stat value={reviewCount} label={t('hero.statReviews')} className="hidden sm:flex" />
+        <Stat value={3} suffix="" label={t('hero.statLangs')} className="hidden sm:flex" />
       </motion.div>
 
-      {/* indicador de scroll — só a seta, colado embaixo, sem texto que colida */}
+      {/* indicador de scroll */}
       <motion.div
         style={{ opacity }}
-        className="absolute bottom-5 left-1/2 z-10 -translate-x-1/2 text-platinum/35"
-        aria-label={t('hero.scroll')}
+        className="absolute bottom-9 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2 text-platinum/40"
       >
-        <motion.span
-          animate={{ y: [0, 7, 0] }}
-          transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-          className="block"
-        >
-          <ChevronDown size={20} strokeWidth={1.5} />
+        <span className="text-[9px] uppercase tracking-ultra">{t('hero.scroll')}</span>
+        <motion.span animate={{ y: [0, 7, 0] }} transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}>
+          <ChevronDown size={18} strokeWidth={1.5} />
         </motion.span>
       </motion.div>
     </section>
@@ -141,11 +135,11 @@ function Stat({
       ref={ref as React.RefObject<HTMLDivElement>}
       className={`flex flex-col items-center ${className}`}
     >
-      <span className="font-display text-3xl font-medium tabular-nums text-platinum sm:text-4xl">
+      <span className="font-display text-4xl font-medium tabular-nums text-platinum sm:text-5xl">
         {n}
         {suffix}
       </span>
-      <span className="mt-1 text-[8px] uppercase tracking-[0.25em] text-platinum/40 sm:text-[9px]">
+      <span className="mt-1 text-[9px] uppercase tracking-[0.25em] text-platinum/40 sm:text-[10px]">
         {label}
       </span>
     </div>

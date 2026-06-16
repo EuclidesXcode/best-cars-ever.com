@@ -29,7 +29,14 @@ export function TopBar({ onSignIn }: { onSignIn: () => void }) {
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <a href="#top" className="text-lg font-black tracking-tight">
+        <a
+          href="#top"
+          onClick={(e) => {
+            e.preventDefault()
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
+          className="text-lg font-black tracking-tight"
+        >
           BEST CARS <span className="text-gradient">EVER</span>
         </a>
 
