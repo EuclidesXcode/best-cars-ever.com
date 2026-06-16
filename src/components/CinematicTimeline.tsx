@@ -1,17 +1,19 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import Image from 'next/image'
 import {
   motion,
   useScroll,
   useTransform,
   useSpring,
+  useMotionValueEvent,
   type MotionValue,
 } from 'framer-motion'
 import { Star, ArrowUpRight, Gauge, Zap } from 'lucide-react'
 import type { CarWithStats } from '@/lib/types'
 import { useI18n } from './I18nProvider'
+import { APPLE_EASE } from '@/lib/useCountUp'
 
 /**
  * Timeline cinematográfica SCROLL-DRIVEN.
@@ -39,7 +41,9 @@ export function CinematicTimeline({
 
   return (
     <div ref={containerRef} id="timeline" className="relative">
-      {/* Régua de progresso da jornada (décadas) — lateral no desktop */}
+      {/* HUD da jornada: índice 01/24 + barra de progresso (estilo Apple) */}
+      <JourneyHUD cars={cars} progress={scrollYProgress} />
+      {/* Régua de décadas — lateral no desktop */}
       <ChapterRail cars={cars} progress={scrollYProgress} />
 
       {cars.map((car, i) => (
@@ -84,32 +88,47 @@ function Scene({
   const raw = useTransform(progress, [start, end], [0, 1], { clamp: true })
   const local = useSpring(raw, { stiffness: 120, damping: 30, mass: 0.4 })
 
-  // O carro entra pelo seu próprio lado e sai um pouco para o oposto.
-  const carEnter = carRight ? 50 : -50
-  const carExit = carRight ? -22 : 22
-  const carX = useTransform(local, [0, 0.5, 1], [carEnter, 0, carExit])
-  const carXpc = useTransform(carX, (v) => `${v}%`)
-  const carScale = useTransform(local, [0, 0.5, 1], [0.92, 1, 1.04])
-  const carOpacity = useTransform(local, [0, 0.22, 0.8, 1], [0, 1, 1, 0])
-  const carRotate = useTransform(local, [0, 1], [carRight ? 3 : -3, carRight ? -2 : 2])
+  // PLATÔ DE "MONTADO": entre P_IN e P_OUT a cena fica estável e centrada
+  // (carro perto das infos). Só entra/sai nas bordas → a cena fica "boa" o
+  // tempo todo em que está no meio da tela, e só abre/fecha ao entrar pelo
+  // topo ou sair por baixo.
+  const P_IN = 0.3
+  const P_OUT = 0.7
 
-  // O painel de infos entra pelo lado OPOSTO ao carro.
-  const infoEnter = carRight ? -8 : 8
-  const infoX = useTransform(local, [0, 0.45, 1], [infoEnter, 0, -infoEnter * 0.6])
+  // O carro entra pelo seu lado, FICA centrado durante o platô, e sai pouco.
+  const carEnter = carRight ? 42 : -42
+  const carExit = carRight ? -14 : 14
+  const carX = useTransform(local, [0, P_IN, P_OUT, 1], [carEnter, 0, 0, carExit])
+  const carXpc = useTransform(carX, (v) => `${v}%`)
+  const carScale = useTransform(local, [0, P_IN, P_OUT, 1], [0.94, 1, 1, 1.03])
+  const carOpacity = useTransform(local, [0, 0.18, 0.85, 1], [0, 1, 1, 0])
+  const carRotate = useTransform(
+    local,
+    [0, P_IN, P_OUT, 1],
+    [carRight ? 2.5 : -2.5, 0, 0, carRight ? -1.5 : 1.5]
+  )
+
+  // O painel de infos entra pelo lado OPOSTO e também estabiliza no platô.
+  const infoEnter = carRight ? -6 : 6
+  const infoX = useTransform(
+    local,
+    [0, P_IN, P_OUT, 1],
+    [infoEnter, 0, 0, -infoEnter * 0.5]
+  )
   const infoXpc = useTransform(infoX, (v) => `${v}rem`)
-  const infoOpacity = useTransform(local, [0, 0.32, 0.8, 1], [0, 1, 1, 0])
+  const infoOpacity = useTransform(local, [0, 0.26, 0.85, 1], [0, 1, 1, 0])
 
   // Ano gigante de fundo — parallax mais lento, em sentido oposto ao carro.
-  const bgX = useTransform(local, [0, 1], [carRight ? -10 : 10, carRight ? 10 : -10])
+  const bgX = useTransform(local, [0, 1], [carRight ? -8 : 8, carRight ? 8 : -8])
   const bgXpc = useTransform(bgX, (v) => `${v}%`)
-  const bgOpacity = useTransform(local, [0, 0.3, 0.7, 1], [0, 0.5, 0.5, 0])
+  const bgOpacity = useTransform(local, [0, P_IN, P_OUT, 1], [0, 0.5, 0.5, 0])
 
-  // glow de estúdio pulsa no centro da cena
-  const glowOpacity = useTransform(local, [0, 0.5, 1], [0, 1, 0])
+  // glow de estúdio: aceso durante todo o platô.
+  const glowOpacity = useTransform(local, [0, P_IN, P_OUT, 1], [0, 1, 1, 0])
 
   return (
     <section
-      className="relative h-[170vh]"
+      className="relative h-[140vh]"
       aria-label={`${car.manufacturer} ${car.name}`}
     >
       <div className="sticky top-0 h-[100svh] overflow-hidden">
@@ -136,7 +155,7 @@ function Scene({
 
         {/* GRID lado-a-lado (desktop) / coluna (mobile) */}
         <div
-          className={`relative z-10 mx-auto flex h-full max-w-7xl flex-col items-center justify-center gap-2 px-6 md:grid md:grid-cols-2 md:gap-8 md:px-10 ${
+          className={`relative z-10 mx-auto flex h-full max-w-7xl flex-col items-center justify-center gap-2 px-6 md:grid md:grid-cols-2 md:items-center md:gap-6 md:px-10 ${
             carRight ? 'md:[direction:rtl]' : ''
           }`}
         >
@@ -260,7 +279,64 @@ function Spec({
 }
 
 /* ---------------------------------------------------------------- */
-/** Trilha de capítulos por década, fixa na lateral (desktop) / topo (mobile). */
+/**
+ * HUD fixo da jornada: índice do carro atual (01 / 24), nome compacto e uma
+ * barra de progresso fina no rodapé. Só aparece enquanto a timeline está em
+ * tela (some no hero, ranking e about) — assinatura de site cinematográfico.
+ */
+function JourneyHUD({
+  cars,
+  progress,
+}: {
+  cars: CarWithStats[]
+  progress: MotionValue<number>
+}) {
+  const n = cars.length
+  const [index, setIndex] = useState(0)
+  const [visible, setVisible] = useState(false)
+
+  useMotionValueEvent(progress, 'change', (v) => {
+    const inside = v > 0.001 && v < 0.999
+    setVisible(inside)
+    const i = Math.min(n - 1, Math.max(0, Math.floor(v * n)))
+    setIndex(i)
+  })
+
+  const barW = useTransform(progress, (v) => `${Math.min(100, Math.max(0, v * 100))}%`)
+  const car = cars[index]
+
+  return (
+    <motion.div
+      initial={false}
+      animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : 12 }}
+      transition={{ duration: 0.5, ease: APPLE_EASE }}
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 hidden md:block"
+    >
+      <div className="mx-auto flex max-w-7xl items-end justify-between px-10 pb-5">
+        <div className="flex items-baseline gap-2 font-display">
+          <span className="text-2xl font-medium tabular-nums text-platinum">
+            {String(index + 1).padStart(2, '0')}
+          </span>
+          <span className="text-sm text-platinum/30">/ {String(n).padStart(2, '0')}</span>
+        </div>
+        <span className="text-[10px] font-medium uppercase tracking-[0.3em] text-platinum/40">
+          {car.manufacturer} {car.name}
+        </span>
+      </div>
+      {/* barra de progresso */}
+      <div className="relative h-px w-full bg-white/10">
+        <motion.div className="absolute inset-y-0 left-0 bg-champagne" style={{ width: barW }} />
+      </div>
+    </motion.div>
+  )
+}
+
+/**
+ * Régua de décadas na lateral direita. Uma linha vertical com os rótulos das
+ * décadas; a década que está sendo percorrida fica em champagne cheio, as
+ * outras esmaecidas. Um ponto/marcador desliza pela linha acompanhando o
+ * scroll, e o trecho já percorrido fica preenchido em champagne.
+ */
 function ChapterRail({
   cars,
   progress,
@@ -268,54 +344,65 @@ function ChapterRail({
   cars: CarWithStats[]
   progress: MotionValue<number>
 }) {
-  // posições normalizadas (0→1) onde começa cada carro
   const total = cars.length
-  const marks = cars.map((c, i) => ({
-    id: c.id,
-    at: i / total,
-    decade: c.decade,
-    decadeStart: i === 0 || cars[i - 1].decade !== c.decade,
-  }))
 
-  const fill = useTransform(progress, (v) => `${Math.min(100, v * 100)}%`)
+  // Décadas distintas, na ordem, com a fração de scroll onde começam.
+  const decades: { decade: number; at: number }[] = []
+  cars.forEach((c, i) => {
+    if (i === 0 || cars[i - 1].decade !== c.decade) {
+      decades.push({ decade: c.decade, at: i / total })
+    }
+  })
+
+  // Índice da década ativa (a mais recente cujo "at" já foi ultrapassado).
+  const [activeDecade, setActiveDecade] = useState(0)
+  useMotionValueEvent(progress, 'change', (v) => {
+    let idx = 0
+    for (let i = 0; i < decades.length; i++) {
+      if (v >= decades[i].at - 0.001) idx = i
+    }
+    setActiveDecade(idx)
+  })
+
+  // Posição do ponto deslizante e do preenchimento (0–100% da altura da régua).
+  const dotTop = useTransform(progress, (v) => `${Math.min(100, Math.max(0, v * 100))}%`)
 
   return (
-    <div className="pointer-events-none fixed right-6 top-1/2 z-30 hidden -translate-y-1/2 flex-col items-end gap-3 lg:flex">
-      {/* linha base + preenchimento */}
-      <div className="relative flex flex-col items-end gap-3">
-        {marks
-          .filter((m) => m.decadeStart)
-          .map((m) => (
-            <DecadeTick key={m.id} decade={m.decade} at={m.at} progress={progress} />
-          ))}
+    <div className="pointer-events-none fixed right-8 top-1/2 z-30 hidden -translate-y-1/2 lg:block">
+      <div className="relative flex items-stretch gap-4">
+        {/* trilho vertical + preenchimento + ponto */}
+        <div className="relative w-px self-stretch bg-white/10">
+          <motion.div
+            className="absolute inset-x-0 top-0 bg-gradient-to-b from-champagne/0 to-champagne"
+            style={{ height: dotTop }}
+            aria-hidden
+          />
+          <motion.div
+            className="absolute left-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-champagne shadow-[0_0_12px_rgba(216,178,124,0.8)]"
+            style={{ top: dotTop }}
+            aria-hidden
+          />
+        </div>
+
+        {/* rótulos */}
+        <div className="flex flex-col justify-between gap-5 py-1">
+          {decades.map((d, i) => {
+            const isActive = i === activeDecade
+            return (
+              <span
+                key={d.decade}
+                className={`text-right text-[11px] font-medium uppercase tracking-[0.3em] transition-all duration-500 ${
+                  isActive
+                    ? 'text-champagne'
+                    : 'text-platinum/25'
+                }`}
+              >
+                {d.decade}s
+              </span>
+            )
+          })}
+        </div>
       </div>
-      {/* barra vertical sutil ao lado */}
-      <motion.div
-        className="absolute -left-3 top-0 w-px bg-champagne/60"
-        style={{ height: fill, maxHeight: '100%' }}
-        aria-hidden
-      />
-      <div className="absolute -left-3 top-0 h-full w-px bg-white/10" aria-hidden />
     </div>
-  )
-}
-
-function DecadeTick({
-  decade,
-  at,
-  progress,
-}: {
-  decade: number
-  at: number
-  progress: MotionValue<number>
-}) {
-  const active = useTransform(progress, (v) => (v >= at - 0.04 ? 1 : 0.35))
-  return (
-    <motion.span
-      style={{ opacity: active }}
-      className="text-[10px] font-medium uppercase tracking-[0.3em] text-champagne transition-opacity"
-    >
-      {decade}s
-    </motion.span>
   )
 }

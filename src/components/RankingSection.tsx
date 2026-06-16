@@ -15,9 +15,16 @@ export function RankingSection({
   const { t } = useI18n()
   const [active, setActive] = useState<Decade>(DECADES[0])
 
-  const ranked = [...carsByDecade[active]]
+  const reviewed = [...carsByDecade[active]]
     .filter((c) => c.review_count > 0)
     .sort((a, b) => a.decade_rank - b.decade_rank)
+
+  // Enquanto a comunidade não avalia, mostramos os carros da década ordenados
+  // por potência — a seção nunca fica "vazia"/quebrada.
+  const hasReviews = reviewed.length > 0
+  const ranked = hasReviews
+    ? reviewed
+    : [...carsByDecade[active]].sort((a, b) => (b.power_hp ?? 0) - (a.power_hp ?? 0))
 
   return (
     <section
@@ -61,42 +68,55 @@ export function RankingSection({
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="divide-y divide-white/[0.06]"
           >
-            {ranked.length === 0 ? (
-              <p className="py-16 text-center text-sm text-platinum/40">
-                {t('ranking.empty')}
-              </p>
-            ) : (
-              ranked.map((car, i) => (
+            {ranked.map((car, i) => (
+              <div
+                key={car.id}
+                className="group flex items-center gap-5 py-5 transition-colors hover:bg-white/[0.02]"
+              >
+                <span className="w-10 shrink-0 text-center font-display text-3xl font-medium tabular-nums text-platinum/30 transition-colors group-hover:text-champagne">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
                 <div
-                  key={car.id}
-                  className="group flex items-center gap-5 py-5 transition-colors hover:bg-white/[0.02]"
-                >
-                  <span className="w-10 shrink-0 text-center font-display text-3xl font-medium tabular-nums text-platinum/30">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <div
-                    className="h-16 w-24 shrink-0 rounded-lg bg-cover bg-center ring-1 ring-white/10"
-                    style={{ backgroundImage: `url(${car.image_url})` }}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-platinum">
-                      {car.manufacturer} {car.name}
-                    </p>
-                    <p className="text-xs uppercase tracking-widest text-platinum/40">
-                      {car.year}
-                    </p>
-                  </div>
+                  className="h-16 w-24 shrink-0 rounded-lg bg-cover bg-center ring-1 ring-white/10"
+                  style={{ backgroundImage: `url(${car.image_url})` }}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-platinum">
+                    {car.manufacturer} {car.name}
+                  </p>
+                  <p className="text-xs uppercase tracking-widest text-platinum/40">
+                    {car.year}
+                  </p>
+                </div>
+                {hasReviews ? (
                   <div className="flex shrink-0 items-center gap-2 text-champagne">
                     <Star size={15} className="fill-champagne" />
                     <span className="font-display text-xl font-medium tabular-nums">
                       {car.avg_rating.toFixed(1)}
                     </span>
                   </div>
-                </div>
-              ))
-            )}
+                ) : (
+                  car.power_hp != null && (
+                    <div className="flex shrink-0 items-baseline gap-1 text-platinum/70">
+                      <span className="font-display text-xl font-medium tabular-nums">
+                        {car.power_hp}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-widest text-platinum/40">
+                        hp
+                      </span>
+                    </div>
+                  )
+                )}
+              </div>
+            ))}
           </motion.div>
         </AnimatePresence>
+
+        {!hasReviews && (
+          <p className="mt-8 text-center text-xs uppercase tracking-[0.2em] text-platinum/40">
+            {t('ranking.cta')}
+          </p>
+        )}
       </div>
     </section>
   )
