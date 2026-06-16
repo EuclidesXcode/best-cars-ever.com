@@ -14,9 +14,11 @@ import { useCountUp, APPLE_EASE } from '@/lib/useCountUp'
 export function IntroHero({
   carCount,
   decadeCount,
+  reviewCount,
 }: {
   carCount: number
   decadeCount: number
+  reviewCount: number
 }) {
   const { t } = useI18n()
   const ref = useRef<HTMLElement>(null)
@@ -101,7 +103,7 @@ export function IntroHero({
         <span className="h-8 w-px bg-white/10" aria-hidden />
         <Stat value={decadeCount} label={t('hero.statDecades')} />
         <span className="hidden h-8 w-px bg-white/10 sm:block" aria-hidden />
-        <Stat value={3} suffix="" label={t('hero.statLangs')} className="hidden sm:flex" />
+        <Stat value={reviewCount} label={t('hero.statReviews')} className="hidden sm:flex" />
       </motion.div>
 
       {/* indicador de scroll */}
