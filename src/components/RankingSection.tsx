@@ -2,12 +2,10 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trophy, Star } from 'lucide-react'
+import { Star } from 'lucide-react'
 import type { CarWithStats, Decade } from '@/lib/types'
 import { DECADES } from '@/lib/types'
 import { useI18n } from './I18nProvider'
-
-const MEDALS = ['🥇', '🥈', '🥉']
 
 export function RankingSection({
   carsByDecade,
@@ -17,30 +15,36 @@ export function RankingSection({
   const { t } = useI18n()
   const [active, setActive] = useState<Decade>(DECADES[0])
 
-  // Carros da década com pelo menos 1 avaliação, ordenados pelo ranking.
   const ranked = [...carsByDecade[active]]
     .filter((c) => c.review_count > 0)
     .sort((a, b) => a.decade_rank - b.decade_rank)
 
   return (
-    <section id="ranking" className="scroll-mt-20 border-t border-white/10 py-16 sm:py-24">
-      <div className="mx-auto max-w-4xl px-4">
-        <div className="mb-8 text-center">
-          <Trophy size={28} className="mx-auto mb-3 text-gold" />
-          <h2 className="text-3xl font-black sm:text-5xl">{t('ranking.title')}</h2>
-          <p className="mt-2 text-sm text-white/60">{t('ranking.subtitle')}</p>
+    <section
+      id="ranking"
+      className="relative scroll-mt-20 border-t border-white/[0.06] bg-carbon py-24 sm:py-32"
+    >
+      <div className="mx-auto max-w-4xl px-6">
+        <div className="mb-12 text-center">
+          <span className="text-[10px] font-medium uppercase tracking-ultra text-champagne">
+            {t('ranking.subtitle')}
+          </span>
+          <h2 className="mt-4 font-display text-4xl font-medium tracking-tight text-platinum sm:text-6xl">
+            {t('ranking.title')}
+          </h2>
+          <div className="rule mx-auto mt-6 w-20" />
         </div>
 
-        {/* Seletor de década — scroll horizontal no mobile (app-like) */}
-        <div className="mb-8 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {/* Seletor de década */}
+        <div className="mb-12 flex justify-center gap-1 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {DECADES.map((d) => (
             <button
               key={d}
               onClick={() => setActive(d)}
-              className={`shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors ${
+              className={`shrink-0 rounded-full px-5 py-2 text-xs font-medium uppercase tracking-[0.15em] transition-colors ${
                 active === d
-                  ? 'bg-gradient-to-r from-accent to-gold text-black'
-                  : 'bg-white/5 text-white/70 hover:bg-white/10'
+                  ? 'bg-champagne text-ink'
+                  : 'text-platinum/50 hover:text-platinum'
               }`}
             >
               {d}s
@@ -51,36 +55,42 @@ export function RankingSection({
         <AnimatePresence mode="wait">
           <motion.div
             key={active}
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.25 }}
-            className="space-y-3"
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="divide-y divide-white/[0.06]"
           >
             {ranked.length === 0 ? (
-              <p className="py-12 text-center text-white/40">{t('ranking.empty')}</p>
+              <p className="py-16 text-center text-sm text-platinum/40">
+                {t('ranking.empty')}
+              </p>
             ) : (
               ranked.map((car, i) => (
                 <div
                   key={car.id}
-                  className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                  className="group flex items-center gap-5 py-5 transition-colors hover:bg-white/[0.02]"
                 >
-                  <span className="w-8 shrink-0 text-center text-2xl font-black text-white/50">
-                    {MEDALS[i] ?? `#${i + 1}`}
+                  <span className="w-10 shrink-0 text-center font-display text-3xl font-medium tabular-nums text-platinum/30">
+                    {String(i + 1).padStart(2, '0')}
                   </span>
                   <div
-                    className="h-14 w-20 shrink-0 rounded-xl bg-cover bg-center"
+                    className="h-16 w-24 shrink-0 rounded-lg bg-cover bg-center ring-1 ring-white/10"
                     style={{ backgroundImage: `url(${car.image_url})` }}
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-bold">
+                    <p className="truncate font-medium text-platinum">
                       {car.manufacturer} {car.name}
                     </p>
-                    <p className="text-xs text-white/50">{car.year}</p>
+                    <p className="text-xs uppercase tracking-widest text-platinum/40">
+                      {car.year}
+                    </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <Star size={16} className="fill-gold text-gold" />
-                    <span className="font-bold">{car.avg_rating.toFixed(1)}</span>
+                  <div className="flex shrink-0 items-center gap-2 text-champagne">
+                    <Star size={15} className="fill-champagne" />
+                    <span className="font-display text-xl font-medium tabular-nums">
+                      {car.avg_rating.toFixed(1)}
+                    </span>
                   </div>
                 </div>
               ))

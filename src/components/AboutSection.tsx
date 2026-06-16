@@ -7,14 +7,17 @@ export function AboutSection() {
   return (
     <section
       id="about"
-      className="scroll-mt-20 border-t border-white/10 py-16 sm:py-24"
+      className="relative scroll-mt-20 border-t border-white/[0.06] py-24 sm:py-32"
     >
-      <div className="mx-auto max-w-2xl px-4 text-center">
-        <h2 className="mb-5 text-3xl font-black sm:text-5xl">{t('about.title')}</h2>
-        <p className="text-base leading-relaxed text-white/70 sm:text-lg">
+      <div className="mx-auto max-w-2xl px-6 text-center">
+        <div className="rule mx-auto mb-10 w-20" />
+        <h2 className="mb-6 font-display text-4xl font-medium tracking-tight text-platinum sm:text-5xl">
+          {t('about.title')}
+        </h2>
+        <p className="text-base font-light leading-relaxed text-platinum/60 sm:text-lg">
           {t('about.body')}
         </p>
-        <p className="mt-10 text-sm text-white/40">
+        <p className="mt-14 text-[10px] uppercase tracking-ultra text-platinum/30">
           © {new Date().getFullYear()} Best Cars Ever
         </p>
       </div>

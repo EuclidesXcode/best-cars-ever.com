@@ -11,92 +11,155 @@ html {
 }
 
 body {
-  @apply bg-ink text-white antialiased;
+  @apply bg-ink text-platinum antialiased;
   overflow-x: hidden;
+  /* leve grão de filme sobre todo o site */
+  background-color: #070708;
 }
 
-/* Thin custom scrollbar */
+/* ---------- Scrollbar discreta ---------- */
 ::-webkit-scrollbar {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0a0f;
+  background: #070708;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a2a35;
+  background: #2a2a30;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #3a3a45;
 }
 
+/* Compat: logo/realces antigos agora em champagne. */
 .text-gradient {
-  @apply bg-gradient-to-r from-accent via-gold to-accent bg-clip-text text-transparent;
+  background: linear-gradient(100deg, #c79a5e, #f3e0bf, #d8b27c);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ---------- Texto metálico champagne ---------- */
+.text-shine {
+  background: linear-gradient(
+    100deg,
+    #c79a5e 0%,
+    #f3e0bf 25%,
+    #d8b27c 50%,
+    #f3e0bf 75%,
+    #c79a5e 100%
+  );
   background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 8s linear infinite;
+}
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
-/* A imagem do carro dissolve na base — sem moldura, parece flutuar. */
-.mask-fade-bottom {
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    #000 0%,
-    #000 55%,
-    rgba(0, 0, 0, 0.55) 78%,
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    #000 0%,
-    #000 55%,
-    rgba(0, 0, 0, 0.55) 78%,
-    transparent 100%
-  );
+/* Painel de vidro fosco refinado. */
+.glass {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
 }
 
-/* Halo de luz atrás do carro flutuante. */
-.stage-glow {
+/* Halo de luz de estúdio atrás do carro. */
+.studio-glow {
   background: radial-gradient(
-    60% 50% at 50% 45%,
-    rgba(245, 179, 1, 0.18) 0%,
-    rgba(225, 6, 0, 0.1) 35%,
-    transparent 70%
+    50% 45% at 50% 50%,
+    rgba(216, 178, 124, 0.16) 0%,
+    rgba(216, 178, 124, 0.05) 40%,
+    transparent 72%
   );
+}
+
+/* Vinheta sutil nas bordas — sensação de lente de cinema. */
+.vignette::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 100% at 50% 45%,
+    transparent 55%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+}
+
+/* Grão de filme — overlay fixo muito sutil. */
+.film-grain::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Piso de estúdio em perspectiva: gradiente sutil que dissolve no horizonte. */
+.studio-floor {
+  background:
+    linear-gradient(to top, rgba(216, 178, 124, 0.04), transparent 60%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.025) 0 1px,
+      transparent 1px 80px
+    );
+}
+
+/* Linha-régua fina champagne (separadores editoriais). */
+.rule {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(216, 178, 124, 0.45),
+    transparent
+  );
+}
+
+/* Cintilação de partículas de poeira de luz. */
+@keyframes drift {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10%,
+  90% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-60px) translateX(12px);
+    opacity: 0;
+  }
 }
 
 .preserve-3d {
   transform-style: preserve-3d;
 }
 
-/* Piso 3D: grade de fibra de carbono que some no horizonte. */
-.carbon-floor {
-  background-color: #07070b;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    repeating-linear-gradient(
-      45deg,
-      rgba(255, 255, 255, 0.015) 0 2px,
-      transparent 2px 4px
-    );
-  background-size:
-    60px 60px,
-    60px 60px,
-    8px 8px;
-}
-
-/* Névoa que esconde a linha do horizonte do piso. */
-.horizon-fade {
-  background: linear-gradient(
-    to bottom,
-    #0a0a0f 0%,
-    rgba(10, 10, 15, 0.85) 18%,
-    rgba(10, 10, 15, 0.4) 38%,
-    transparent 60%
-  );
-}
-
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+  .text-shine {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

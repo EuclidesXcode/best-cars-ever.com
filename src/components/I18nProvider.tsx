@@ -29,11 +29,15 @@ function detectInitialLocale(): Locale {
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
+  // Começa em 'en' (igual ao SSR) e só troca após montar, para o primeiro
+  // paint do cliente bater com o HTML do servidor (evita erro de hidratação).
   const [locale, setLocaleState] = useState<Locale>('en')
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Locale | null
-    setLocaleState(stored ?? detectInitialLocale())
+    const next = stored ?? detectInitialLocale()
+    if (next !== 'en') setLocaleState(next)
+    document.documentElement.lang = next
   }, [])
 
   const setLocale = useCallback((l: Locale) => {

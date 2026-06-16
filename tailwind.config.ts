@@ -6,25 +6,34 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'var(--font-sans)', 'serif'],
       },
       colors: {
-        ink: '#0a0a0f',
-        accent: '#e10600',
-        gold: '#f5b301',
+        // Dark-luxo cinematográfico
+        ink: '#070708', // preto profundo (fundo)
+        carbon: '#0e0e11', // superfície elevada
+        smoke: '#16161b', // cards / painéis
+        champagne: '#d8b27c', // acento metálico quente
+        platinum: '#e8e6e1', // off-white de texto
+        accent: '#d8b27c', // alias p/ compat
+        gold: '#d8b27c', // alias p/ compat
+      },
+      letterSpacing: {
+        ultra: '0.4em',
       },
       keyframes: {
-        'gradient-x': {
-          '0%, 100%': { backgroundPosition: '0% 50%' },
-          '50%': { backgroundPosition: '100% 50%' },
-        },
         'fade-up': {
           '0%': { opacity: '0', transform: 'translateY(24px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
       },
       animation: {
-        'gradient-x': 'gradient-x 6s ease infinite',
-        'fade-up': 'fade-up 0.7s ease forwards',
+        'fade-up': 'fade-up 0.8s cubic-bezier(0.22,1,0.36,1) forwards',
+        shimmer: 'shimmer 8s linear infinite',
       },
     },
   },
