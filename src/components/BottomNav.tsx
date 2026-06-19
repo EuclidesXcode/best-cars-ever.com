@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Clock, Trophy, Info, User as UserIcon, LogOut } from 'lucide-react'
+import Link from 'next/link'
+import { Clock, Trophy, Info, Newspaper, User as UserIcon, LogOut } from 'lucide-react'
 import { useI18n } from './I18nProvider'
 import { useAuth } from './AuthProvider'
 import { signOut } from '@/lib/actions'
@@ -62,6 +63,14 @@ export function BottomNav({ onSignIn }: { onSignIn: () => void }) {
             </button>
           )
         })}
+
+        <Link
+          href="/news"
+          className="flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-medium text-white/50"
+        >
+          <Newspaper size={22} />
+          {t('nav.news')}
+        </Link>
 
         {user ? (
           <form action={signOut} className="flex flex-1">

@@ -43,7 +43,7 @@ export function TopBar({ onSignIn }: { onSignIn: () => void }) {
         <div className="flex items-center gap-2">
           <a
             href="/news"
-            className="hidden rounded-full border border-white/15 bg-white/5 px-3 py-2 text-sm transition-colors hover:bg-white/10 sm:inline-block"
+            className="rounded-full border border-white/15 bg-white/5 px-3 py-2 text-sm transition-colors hover:bg-white/10"
           >
             {t('nav.news')}
           </a>
