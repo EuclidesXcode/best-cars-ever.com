@@ -42,3 +42,17 @@ export interface CarWithStats extends Car {
   decade_rank: number
   my_review: Review | null
 }
+
+/** Notícia do blog admin (texto em Markdown + capa). Sem comentários. */
+export interface Post {
+  id: string
+  slug: string
+  title: string
+  excerpt: string | null
+  cover_url: string | null
+  body: string
+  published: boolean
+  author_id: string | null
+  created_at: string
+  updated_at: string
+}

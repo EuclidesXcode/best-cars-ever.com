@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import type { Car, CarRanking, Review, CarWithStats, Decade } from '@/lib/types'
+import type { Car, CarRanking, Review, CarWithStats, Decade, Post } from '@/lib/types'
 import { DECADES } from '@/lib/types'
 
 /**
@@ -80,4 +80,64 @@ export async function getCurrentUser() {
   const supabase = await createClient()
   const { data } = await supabase.auth.getUser()
   return data.user
+}
+
+/** O usuário logado é admin? (lê profiles.is_admin). Usado para proteger /admin. */
+export async function isCurrentUserAdmin(): Promise<boolean> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return false
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single()
+  return data?.is_admin === true
+}
+
+// ----------- NOTÍCIAS (blog admin) --------------------------
+
+/** Notícias publicadas, mais recentes primeiro. Listagem pública de /news. */
+export async function getPublishedPosts(): Promise<Post[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('published', true)
+    .order('created_at', { ascending: false })
+  return (data ?? []) as Post[]
+}
+
+/**
+ * Um post pelo slug. Rascunhos só são retornados para o admin (garantido por RLS),
+ * então a página pública chama notFound() quando vier null.
+ */
+export async function getPostBySlug(slug: string): Promise<Post | null> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('slug', slug)
+    .maybeSingle()
+  return (data as Post) ?? null
+}
+
+/** Um post pelo id (inclui rascunho via RLS de admin). Usado na edição. */
+export async function getPostById(id: string): Promise<Post | null> {
+  const supabase = await createClient()
+  const { data } = await supabase.from('posts').select('*').eq('id', id).maybeSingle()
+  return (data as Post) ?? null
+}
+
+/** Todos os posts (inclui rascunhos). RLS já filtra para não-admin. Usado em /admin. */
+export async function getAllPostsForAdmin(): Promise<Post[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('posts')
+    .select('*')
+    .order('created_at', { ascending: false })
+  return (data ?? []) as Post[]
 }
